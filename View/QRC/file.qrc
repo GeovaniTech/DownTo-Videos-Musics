@@ -1,0 +1,12 @@
+<RCC>
+  <qresource prefix="Images/icons">
+    <file>adicionar-botao_br.png</file>
+    <file>download_25x25.png</file>
+    <file>max.png</file>
+    <file>max_hover.png</file>
+    <file>minus.png</file>
+    <file>minus_hover.png</file>
+    <file>x.png</file>
+    <file>x_hover.png</file>
+  </qresource>
+</RCC>
