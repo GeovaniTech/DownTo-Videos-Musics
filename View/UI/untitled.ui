@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1143</width>
-    <height>827</height>
+    <height>790</height>
    </rect>
   </property>
   <property name="minimumSize">
@@ -17,7 +17,11 @@
    </size>
   </property>
   <property name="windowTitle">
-   <string>MainWindow</string>
+   <string>DonwTo - Download Videos and Musics</string>
+  </property>
+  <property name="windowIcon">
+   <iconset resource="../QRC/file.qrc">
+    <normaloff>:/Images/icons/download-da-nuvem.png</normaloff>:/Images/icons/download-da-nuvem.png</iconset>
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QVBoxLayout" name="verticalLayout">
@@ -236,7 +240,7 @@ background-image: url(:/Images/icons/x_hover.png);
                <number>0</number>
               </property>
               <item alignment="Qt::AlignHCenter">
-               <widget class="QFrame" name="frame_2">
+               <widget class="QFrame" name="frame_conteiner_top">
                 <property name="minimumSize">
                  <size>
                   <width>0</width>
@@ -272,7 +276,7 @@ background-image: url(:/Images/icons/x_hover.png);
                   <number>0</number>
                  </property>
                  <item>
-                  <widget class="QLabel" name="label_2">
+                  <widget class="QLabel" name="lbl_youtube">
                    <property name="minimumSize">
                     <size>
                      <width>121</width>
@@ -300,7 +304,7 @@ background-image: url(:/Images/icons/x_hover.png);
                   </widget>
                  </item>
                  <item>
-                  <widget class="QLabel" name="label_3">
+                  <widget class="QLabel" name="lbl_downto">
                    <property name="minimumSize">
                     <size>
                      <width>0</width>
@@ -350,7 +354,7 @@ color: #327f93</string>
                   <number>0</number>
                  </property>
                  <item alignment="Qt::AlignHCenter">
-                  <widget class="QFrame" name="frame_7">
+                  <widget class="QFrame" name="frame_conteiner_link">
                    <property name="frameShape">
                     <enum>QFrame::NoFrame</enum>
                    </property>
@@ -374,7 +378,7 @@ color: #327f93</string>
                      <number>0</number>
                     </property>
                     <item>
-                     <widget class="QLineEdit" name="search_music_home">
+                     <widget class="QLineEdit" name="line_link">
                       <property name="minimumSize">
                        <size>
                         <width>950</width>
@@ -422,7 +426,7 @@ color: black;</string>
                      </widget>
                     </item>
                     <item>
-                     <widget class="QPushButton" name="btn_search_home">
+                     <widget class="QPushButton" name="btn_download">
                       <property name="minimumSize">
                        <size>
                         <width>91</width>
@@ -437,7 +441,7 @@ color: black;</string>
                       </property>
                       <property name="font">
                        <font>
-                        <family>Montserrat</family>
+                        <family>Century Gothic</family>
                         <pointsize>11</pointsize>
                         <weight>50</weight>
                         <italic>false</italic>
@@ -452,7 +456,8 @@ color: black;</string>
 	border-radius: 5px;
 	margin-left: -3px;
 	
-	font: 11pt &quot;Montserrat&quot;;
+	
+	font: 11pt &quot;Century Gothic&quot;;
 }
 
 QPushButton:hover {
@@ -475,7 +480,7 @@ QPushButton:hover {
                   </widget>
                  </item>
                  <item alignment="Qt::AlignHCenter|Qt::AlignTop">
-                  <widget class="QFrame" name="frame_6">
+                  <widget class="QFrame" name="frame_conteiner_save">
                    <property name="frameShape">
                     <enum>QFrame::StyledPanel</enum>
                    </property>
@@ -510,7 +515,7 @@ color: #327f93;</string>
                       </property>
                       <property name="font">
                        <font>
-                        <family>Montserrat</family>
+                        <family>Century Gothic</family>
                         <pointsize>11</pointsize>
                         <weight>50</weight>
                         <italic>false</italic>
@@ -522,14 +527,13 @@ color: #327f93;</string>
 	border: 0px solid #327f93;
 	color: white;
 	background-color: #327f93;
-	border-radius: 5px;
-	
-	font: 11pt &quot;Montserrat&quot;;
+	border-radius: 5px;	
+	font: 11pt &quot;Century Gothic&quot;;
 }
 
 QPushButton:hover {
 	
-	background-color: rgb(59, 152, 175);
+	background-color: rgb(59, 152, 175)
 }</string>
                       </property>
                       <property name="text">
@@ -541,7 +545,7 @@ QPushButton:hover {
                   </widget>
                  </item>
                  <item alignment="Qt::AlignHCenter|Qt::AlignTop">
-                  <widget class="QFrame" name="frame_8">
+                  <widget class="QFrame" name="frame_conteiner_checks">
                    <property name="frameShape">
                     <enum>QFrame::StyledPanel</enum>
                    </property>
@@ -550,7 +554,7 @@ QPushButton:hover {
                    </property>
                    <layout class="QHBoxLayout" name="horizontalLayout_7">
                     <item>
-                     <widget class="QCheckBox" name="checkBox_4">
+                     <widget class="QCheckBox" name="check_playlist">
                       <property name="styleSheet">
                        <string notr="true">QCheckBox::Indicator {
 border: 3px solid rgb(116, 116, 116);
@@ -575,7 +579,7 @@ border: 3px solid #327f93;
                      </widget>
                     </item>
                     <item>
-                     <widget class="QCheckBox" name="checkBox_2">
+                     <widget class="QCheckBox" name="check_video">
                       <property name="styleSheet">
                        <string notr="true">QCheckBox::Indicator {
 border: 3px solid rgb(116, 116, 116);
@@ -600,7 +604,7 @@ border: 3px solid #327f93;
                      </widget>
                     </item>
                     <item>
-                     <widget class="QCheckBox" name="checkBox_3">
+                     <widget class="QCheckBox" name="check_music">
                       <property name="styleSheet">
                        <string notr="true">QCheckBox::Indicator {
 border: 3px solid rgb(116, 116, 116);
@@ -631,7 +635,7 @@ border: 3px solid #327f93;
                </widget>
               </item>
               <item>
-               <widget class="QFrame" name="frame_5">
+               <widget class="QFrame" name="frame_conteiner_Table">
                 <property name="frameShape">
                  <enum>QFrame::NoFrame</enum>
                 </property>
@@ -640,7 +644,7 @@ border: 3px solid #327f93;
                 </property>
                 <layout class="QHBoxLayout" name="horizontalLayout_8">
                  <item>
-                  <widget class="QTableWidget" name="tableWidget">
+                  <widget class="QTableWidget" name="table">
                    <property name="maximumSize">
                     <size>
                      <width>16777215</width>
@@ -714,7 +718,7 @@ border: 3px solid #327f93;
            <number>0</number>
           </property>
           <item alignment="Qt::AlignRight|Qt::AlignBottom">
-           <widget class="QFrame" name="frame_3">
+           <widget class="QFrame" name="frame_conteiner">
             <property name="frameShape">
              <enum>QFrame::StyledPanel</enum>
             </property>
@@ -723,9 +727,28 @@ border: 3px solid #327f93;
             </property>
             <layout class="QHBoxLayout" name="horizontalLayout_3">
              <item>
-              <widget class="QPushButton" name="pushButton">
+              <widget class="QPushButton" name="btn_github">
+               <property name="minimumSize">
+                <size>
+                 <width>30</width>
+                 <height>30</height>
+                </size>
+               </property>
+               <property name="maximumSize">
+                <size>
+                 <width>30</width>
+                 <height>30</height>
+                </size>
+               </property>
                <property name="styleSheet">
-                <string notr="true">border: solid 0px;</string>
+                <string notr="true">QPushButton {
+background-image: url(:/Images/icons/github.png);
+border: solid 0px;
+}
+
+QPushButton:hover {
+background-image: url(:/Images/icons/github_hover.png);
+}</string>
                </property>
                <property name="text">
                 <string/>
@@ -733,7 +756,7 @@ border: 3px solid #327f93;
               </widget>
              </item>
              <item>
-              <widget class="QLabel" name="label">
+              <widget class="QLabel" name="lbl_developed_by">
                <property name="styleSheet">
                 <string notr="true">font: 11pt &quot;Century Gothic&quot;;
 color: white;</string>
@@ -757,7 +780,6 @@ color: white;</string>
  </widget>
  <resources>
   <include location="../QRC/file.qrc"/>
-  <include location="../../../ListenNow V2/View/QRC/file.qrc"/>
  </resources>
  <connections/>
 </ui>

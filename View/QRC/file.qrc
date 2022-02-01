@@ -1,5 +1,8 @@
 <RCC>
   <qresource prefix="Images/icons">
+    <file>download-da-nuvem.png</file>
+    <file>github.png</file>
+    <file>github_hover.png</file>
     <file>youtube-logo-5-2.png</file>
     <file>adicionar-botao_br.png</file>
     <file>download_25x25.png</file>
