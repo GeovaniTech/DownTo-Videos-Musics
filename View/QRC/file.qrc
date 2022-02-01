@@ -1,5 +1,6 @@
 <RCC>
   <qresource prefix="Images/icons">
+    <file>youtube-logo-5-2.png</file>
     <file>adicionar-botao_br.png</file>
     <file>download_25x25.png</file>
     <file>max.png</file>
