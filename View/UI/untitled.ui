@@ -461,11 +461,7 @@ QPushButton:hover {
 }</string>
                       </property>
                       <property name="text">
-                       <string/>
-                      </property>
-                      <property name="icon">
-                       <iconset resource="../QRC/file.qrc">
-                        <normaloff>:/Images/icons/download_25x25.png</normaloff>:/Images/icons/download_25x25.png</iconset>
+                       <string>Download</string>
                       </property>
                       <property name="iconSize">
                        <size>
@@ -554,7 +550,25 @@ QPushButton:hover {
                    </property>
                    <layout class="QHBoxLayout" name="horizontalLayout_7">
                     <item>
-                     <widget class="QRadioButton" name="radioButton">
+                     <widget class="QCheckBox" name="checkBox_4">
+                      <property name="styleSheet">
+                       <string notr="true">QCheckBox::Indicator {
+border: 3px solid rgb(116, 116, 116);
+width: 15px;
+height: 15px;
+border-radius: 10px;
+background-color: rgb(148, 148, 148);
+}
+
+QCheckBox {
+font: 13pt &quot;Century Gothic&quot;;
+}
+QCheckBox:Indicator:checked {
+background-color: rgb(39, 100, 115);
+border: 3px solid #327f93;
+
+}</string>
+                      </property>
                       <property name="text">
                        <string>Playlist</string>
                       </property>
@@ -562,6 +576,24 @@ QPushButton:hover {
                     </item>
                     <item>
                      <widget class="QCheckBox" name="checkBox_2">
+                      <property name="styleSheet">
+                       <string notr="true">QCheckBox::Indicator {
+border: 3px solid rgb(116, 116, 116);
+width: 15px;
+height: 15px;
+border-radius: 10px;
+background-color: rgb(148, 148, 148);
+}
+
+QCheckBox {
+font: 13pt &quot;Century Gothic&quot;;
+}
+QCheckBox:Indicator:checked {
+background-color: rgb(39, 100, 115);
+border: 3px solid #327f93;
+
+}</string>
+                      </property>
                       <property name="text">
                        <string>Video</string>
                       </property>
@@ -569,6 +601,24 @@ QPushButton:hover {
                     </item>
                     <item>
                      <widget class="QCheckBox" name="checkBox_3">
+                      <property name="styleSheet">
+                       <string notr="true">QCheckBox::Indicator {
+border: 3px solid rgb(116, 116, 116);
+width: 15px;
+height: 15px;
+border-radius: 10px;
+background-color: rgb(148, 148, 148);
+}
+
+QCheckBox {
+font: 13pt &quot;Century Gothic&quot;;
+}
+QCheckBox:Indicator:checked {
+background-color: rgb(39, 100, 115);
+border: 3px solid #327f93;
+
+}</string>
+                      </property>
                       <property name="text">
                        <string>Music</string>
                       </property>
@@ -605,7 +655,7 @@ QPushButton:hover {
                    </property>
                    <column>
                     <property name="text">
-                     <string>Capa</string>
+                     <string>Thumb</string>
                     </property>
                    </column>
                    <column>
