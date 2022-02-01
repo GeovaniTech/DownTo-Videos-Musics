@@ -393,7 +393,7 @@ class Ui_MainWindow(object):
         item = self.table.horizontalHeaderItem(3)
         item.setText(_translate("MainWindow", "Delete"))
         self.lbl_developed_by.setText(_translate("MainWindow", "Developed by Geovani Debastiani"))
-import file_rc
+from View.PY import file_RC
 
 
 if __name__ == "__main__":
