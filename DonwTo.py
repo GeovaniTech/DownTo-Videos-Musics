@@ -2,6 +2,7 @@ import sys
 import os
 import requests
 import pytube
+import sqlite3
 
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
@@ -14,6 +15,10 @@ from tkinter import Tk
 from View.PY.interface import Ui_MainWindow
 
 link = ''
+directory = ''
+
+bank = sqlite3.connect('bank_DownTo')
+cursor = bank.cursor()
 
 
 class DownTo(QMainWindow):
@@ -32,6 +37,9 @@ class DownTo(QMainWindow):
         self.ui.btn_exit.clicked.connect(self.Close)
         self.ui.btn_max_min.clicked.connect(self.Max_Min)
         self.ui.btn_min.clicked.connect(self.Min)
+
+        self.ui.btn_download.clicked.connect(self.ValidationsDownload)
+        self.ui.btn_select.clicked.connect(self.Directory)
 
     def mousePressEvent(self, event):
         self.oldPosition = event.globalPos()
@@ -78,7 +86,7 @@ class DownTo(QMainWindow):
         self.ui.frame_conteiner_Table.layout().setContentsMargins(0, 0, 0, 0)
 
     def ValidationsDownload(self):
-        global link
+        global link, directory
         link = self.ui.line_link.text()
 
         check_playlist = self.ui.check_playlist
@@ -86,17 +94,16 @@ class DownTo(QMainWindow):
         check_video = self.ui.check_video
 
         if link != '':
-            if check_video.isChecked() == True or check_music.isChecked() == True:
-                if check_playlist.isChecked() == True:
-                    self.playlist = False
+            if directory != '':
+                if check_video.isChecked() == True or check_music.isChecked() == True:
+                    if check_playlist.isChecked() == True:
+                        self.playlist = True
+                    else:
+                        self.playlist = False
                 else:
-                    self.playlist = True
-
-
-
-
+                    self.PopUps('Download type error', 'Please, select type of download, music or video.')
             else:
-                self.PopUps('Download type error', 'Please select type of download, music or video.')
+                self.PopUps('Error Directory', 'Please, enter a valid directory.')
         else:
             self.PopUps('Error Link', 'Please, enter a valid link.')
 
@@ -112,6 +119,15 @@ class DownTo(QMainWindow):
         icon.addPixmap(QPixmap('View/QRC/Logo.ico'), QIcon.Normal, QIcon.Off)
         message.setWindowIcon(icon)
         x = message.exec_()
+
+    def Directory(self):
+        global directory
+
+        root = Tk()
+        root.withdraw()
+        root.iconbitmap('View/QRC/Logo.ico')
+
+        directory = askdirectory()
 
 
 class FunctionsThreads(QObject):
