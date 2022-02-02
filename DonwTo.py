@@ -107,6 +107,17 @@ class DownTo(QMainWindow):
                         self.playlist = True
                     else:
                         self.playlist = False
+
+                    if check_video.isChecked() == True:
+                        self.type = 'MP4'
+
+                    if check_music.isChecked() == True:
+                        self.type = 'MP3'
+
+                    if check_video.isChecked() == True and check_music.isChecked() == True:
+                        self.type = 'MP4|MP3'
+                    cursor.execute(f'INSERT INTO downloads (url, type, playlist) VALUES ("{link}", "{self.type}", {self.playlist})')
+                    bank.commit()
                 else:
                     self.PopUps('Download type error', 'Please, select type of download, music or video.')
             else:
@@ -161,7 +172,23 @@ class DownTo(QMainWindow):
 
 class FunctionsThreads(QObject):
     # Signals To Emit
-    ...
+    download_finished = pyqtSignal()
+    download_error = pyqtSignal()
+
+    def DownloadVideo(self):
+        try:
+            pytube.YouTube(link).streams.get_highest_resolution().download()
+        except:
+            self.download_error.emit()
+        else:
+            self.download_finished.emit()
+
+
+    def DonwnloadMusic(self):
+        ...
+
+    def DownloadPlaylist(self):
+        ...
 
 
 if __name__ == '__main__':
