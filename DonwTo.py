@@ -3,6 +3,7 @@ import os
 import requests
 import pytube
 import sqlite3
+import webbrowser
 
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
@@ -20,6 +21,8 @@ directory = ''
 bank = sqlite3.connect('bank_DownTo')
 cursor = bank.cursor()
 
+bank_urls = list()
+
 
 class DownTo(QMainWindow):
     def __init__(self):
@@ -33,6 +36,7 @@ class DownTo(QMainWindow):
         self.window().setWindowFlags(Qt.WindowFlags(Qt.FramelessWindowHint))
 
         self.ConfigTable()
+        self.QueryUrls()
 
         self.ui.btn_exit.clicked.connect(self.Close)
         self.ui.btn_max_min.clicked.connect(self.Max_Min)
@@ -40,6 +44,8 @@ class DownTo(QMainWindow):
 
         self.ui.btn_download.clicked.connect(self.ValidationsDownload)
         self.ui.btn_select.clicked.connect(self.Directory)
+
+        self.ui.btn_github.clicked.connect(lambda: webbrowser.open('https://github.com/GeovaniTech'))
 
     def mousePressEvent(self, event):
         self.oldPosition = event.globalPos()
@@ -66,12 +72,13 @@ class DownTo(QMainWindow):
 
     def ConfigTable(self):
 
+        self.ui.table.removeColumn(0)
+
         header = self.ui.table.horizontalHeader()
 
         header.setSectionResizeMode(0, QtWidgets.QHeaderView.Stretch)
         header.setSectionResizeMode(1, QtWidgets.QHeaderView.Stretch)
         header.setSectionResizeMode(2, QtWidgets.QHeaderView.Stretch)
-        header.setSectionResizeMode(3, QtWidgets.QHeaderView.Stretch)
 
         self.ui.table.setEditTriggers(QAbstractItemView.NoEditTriggers)
         self.ui.table.verticalHeader().setVisible(False)
@@ -81,7 +88,7 @@ class DownTo(QMainWindow):
 
         self.ui.table.setStyleSheet('QTableWidget {color: black;font: 11pt "Century Gothic"; border: 0px; background-color: #F0F0F0;}'
                                     'QTableWidget::item:selected{background-color: #327f93; outline:0px; color: white;}'
-                                    'QHeaderView::section:horizontal{background-color: #327f93; color: white; border: 1px solid #327f93; font: 10pt "Century Gothic";}')
+                                    'QHeaderView::section:horizontal{background-color: #327f93; color: white; border: 1px solid #327f93; font: 12pt "Century Gothic";}')
 
         self.ui.frame_conteiner_Table.layout().setContentsMargins(0, 0, 0, 0)
 
@@ -108,7 +115,29 @@ class DownTo(QMainWindow):
             self.PopUps('Error Link', 'Please, enter a valid link.')
 
     def UpdateTable(self):
-        ...
+
+        row = 0
+
+        self.ui.table.setRowCount()
+
+    def QueryUrls(self):
+        global bank_urls
+        cursor.execute('SELECT * FROM downloads')
+        bank_urls = cursor.fetchall()
+
+        row = 0
+
+        self.progress_bar = QProgressBar()
+        self.btn_delete = QPushButton()
+        self.btn_delete.setFixedWidth(60)
+
+        if len(bank_urls) == 0:
+            self.ui.table.setRowCount(20)
+
+            for null_values in range(0, 20):
+                self.ui.table.setItem(row, 0, QTableWidgetItem(''))
+                self.ui.table.setItem(row, 1, QTableWidgetItem(''))
+                self.ui.table.setItem(row, 2, QTableWidgetItem(''))
 
     def PopUps(self, title, description):
         message = QMessageBox()
