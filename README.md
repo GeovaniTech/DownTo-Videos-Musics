@@ -12,5 +12,6 @@
 + ### Tkinter
 
 ## Application Images
-![1](https://user-images.githubusercontent.com/84943777/152075028-9e1461e9-77fa-4fbe-8a6c-919daa6b5461.PNG)
-![3](https://user-images.githubusercontent.com/84943777/152075029-90983386-68b2-4290-aeca-90a100a1679e.PNG)
+![1](https://user-images.githubusercontent.com/84943777/152220586-fd558edd-4023-4d64-ace2-a88ec28bf1c2.PNG)
+![2](https://user-images.githubusercontent.com/84943777/152220591-f7d5fc44-2f32-4e65-b46e-7fffaed682da.PNG)
+
