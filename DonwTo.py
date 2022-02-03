@@ -19,10 +19,12 @@ link = ''
 directory = ''
 percent = 0
 current_id = 0
+last_row = 0
+
 titles = list()
 delete_ids = list()
 
-bank = sqlite3.connect('bank_DownTo')
+bank = sqlite3.connect('bank_DownTo', check_same_thread=False)
 cursor = bank.cursor()
 
 cursor.execute('DELETE FROM downloads')
@@ -138,7 +140,6 @@ class DownTo(QMainWindow):
 
                     self.QueryUrls()
                     self.CallThreadSearchVideos()
-                    self.UpdateTable()
                 else:
                     self.PopUps('Download type error', 'Please, select type of download, music or video.')
             else:
@@ -147,7 +148,46 @@ class DownTo(QMainWindow):
             self.PopUps('Error Link', 'Please, enter a valid link.')
 
     def UpdateTable(self):
-        ...
+        global titles, last_row
+        row = 0
+        self.ui.table.setRowCount(len(titles))
+
+        if len(titles) > 0:
+            header = self.ui.table.horizontalHeader()
+
+            header.setSectionResizeMode(1, QtWidgets.QHeaderView.ResizeToContents)
+            header.setSectionResizeMode(2, QtWidgets.QHeaderView.ResizeToContents)
+            header.setSectionResizeMode(3, QtWidgets.QHeaderView.ResizeToContents)
+
+        for title in titles:
+            self.progress_bar = QProgressBar()
+            self.progress_bar.setValue(0)
+            self.progress_bar.setFixedWidth(250)
+            self.btn_delete = QPushButton()
+            self.btn_delete.setStyleSheet('QPushButton {border: 0px solid #F0F0F0;}'
+                                          'QPushButton:hover {background-color: #d9d9d9}')
+            self.btn_delete.setFixedWidth(60)
+
+            icon = QIcon()
+            icon.addPixmap(QPixmap('View/QRC/delete.png'), QIcon.Normal, QIcon.Off)
+            self.btn_delete.setIcon(icon)
+            self.btn_delete.clicked.connect(self.DeleteUrl)
+
+            self.ui.table.setItem(row, 0, QTableWidgetItem(str(title[0])))
+            self.ui.table.setItem(row, 1, QTableWidgetItem(title[1]))
+            self.ui.table.setCellWidget(row, 2, self.progress_bar)
+            self.ui.table.setCellWidget(row, 3, self.btn_delete)
+            row += 1
+            last_row += 1
+
+        if len(titles) < 20:
+            self.ui.table.setRowCount(20)
+            self.ui.table.setItem(row, 0, QTableWidgetItem(''))
+            self.ui.table.setItem(row, 1, QTableWidgetItem(''))
+            self.ui.table.setItem(row, 2, QTableWidgetItem(''))
+            self.ui.table.setItem(row, 3, QTableWidgetItem(''))
+            row += 1
+
 
     def CallThreadSearchVideos(self):
         if len(bank_urls) > 0:
@@ -158,6 +198,8 @@ class DownTo(QMainWindow):
 
             self.thread.started.connect(self.worker.SearchVideos)
             self.worker.search_video_error.connect(lambda: self.PopUps('Error - Search Video', "Unfortunately we couldn't find your video with the given link."))
+
+            self.worker.update_table.connect(self.UpdateTable)
 
             self.worker.search_video_completed.connect(self.thread.quit)
             self.worker.search_video_completed.connect(self.worker.deleteLater)
@@ -232,13 +274,37 @@ class FunctionsThreads(QObject):
     download_finished = pyqtSignal()
     download_percent = pyqtSignal()
 
+    update_table = pyqtSignal()
+
     search_video_completed = pyqtSignal()
     search_video_error = pyqtSignal()
 
     def DownloadVideos(self):
         global current_id
 
-        self.download_finished.emit()
+        cursor.execute('SELECT * FROM downloads')
+        bank_urls = cursor.fetchall()
+
+        for url in bank_urls:
+            if url[1] == 'MP3|MP4':
+                pytube.YouTube(url[0], on_progress_callback=self.progress_function).streams.get_highest_resolution().download()
+                yt = pytube.YouTube(url[0], on_progress_callback=self.progress_function).streams.get_audio_only()
+                old_file = yt.download()
+                base, ext = os.path.splitext(old_file)
+                new_file = base + '.mp3'
+                os.rename(old_file, new_file)
+
+            elif url[1] == 'MP3':
+                yt = pytube.YouTube(url[0], on_progress_callback=self.progress_function).streams.get_audio_only()
+                old_file = yt.download()
+                base, ext = os.path.splitext(old_file)
+                new_file = base + '.mp3'
+                os.rename(old_file, new_file)
+
+            elif url[1] == 'MP4'
+                pytube.YouTube(url[0], on_progress_callback=self.progress_function).streams.get_highest_resolution().download()
+
+
 
 
 
@@ -257,22 +323,25 @@ class FunctionsThreads(QObject):
 
     def SearchVideos(self):
         global title, delete_ids
-        if len(bank_urls) > 0:
-            for url in bank_urls:
-                try:
+
+        len_bank = len(bank_urls)
+        if len_bank > 0:
+            try:
+                for url in bank_urls:
                     if url[2] != 1:
                         yt = pytube.YouTube(url[0])
                         title = yt.title
-                        titles.append(title)
+                        titles.append([title, url[1]])
+                        self.update_table.emit()
                     else:
                         delete_ids.append(url[3])
                         yt = pytube.Playlist(url[0])
 
                         for url_playlist in yt.video_urls:
-                            yt = pytube.YouTube(url_playlist)
+                            ys = pytube.YouTube(url_playlist)
 
-                            title = yt.title
-                            titles.append(title)
+                            title = ys.title
+                            titles.append([title, url[1]])
 
                             cursor.execute('SELECT MAX(ID) FROM downloads')
                             last_id = cursor.fetchone()
@@ -283,17 +352,18 @@ class FunctionsThreads(QObject):
                                 else:
                                     id = int(id_bank) + 1
 
+                            self.playlist = False
+
                             cursor.execute(
-                                f'INSERT INTO downloads (url, type, playlist, ID) VALUES ("{url_playlist}", "{url[1]}", {0}, {id})')
+                                f'INSERT INTO downloads (url, type, playlist, ID) VALUES ("{url_playlist}", "{url[1]}", {self.playlist}, {id})')
                             bank.commit()
-                except:
-                    self.search_video_error.emit()
-                    delete_ids.append(url[3])
-                else:
-                    self.search_video_completed.emit()
-                    print('tudo certo')
 
-
+                            self.update_table.emit()
+            except:
+                self.search_video_error.emit()
+                delete_ids.append(url[3])
+            else:
+                self.search_video_completed.emit()
 
 
 if __name__ == '__main__':
