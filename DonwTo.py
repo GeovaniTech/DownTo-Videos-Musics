@@ -139,7 +139,9 @@ class DownTo(QMainWindow):
                     bank.commit()
 
                     self.QueryUrls()
+                    self.UpdateTable()
                     self.CallThreadSearchVideos()
+
                 else:
                     self.PopUps('Download type error', 'Please, select type of download, music or video.')
             else:
@@ -148,7 +150,7 @@ class DownTo(QMainWindow):
             self.PopUps('Error Link', 'Please, enter a valid link.')
 
     def UpdateTable(self):
-        global titles, last_row
+        global titles, current_id
         row = 0
         self.ui.table.setRowCount(len(titles))
 
@@ -162,7 +164,12 @@ class DownTo(QMainWindow):
         for title in titles:
             self.progress_bar = QProgressBar()
             self.progress_bar.setValue(0)
+            if title[2] == current_id:
+                print(percent)
+                self.progress_bar.setValue(int(percent))
+
             self.progress_bar.setFixedWidth(250)
+
             self.btn_delete = QPushButton()
             self.btn_delete.setStyleSheet('QPushButton {border: 0px solid #F0F0F0;}'
                                           'QPushButton:hover {background-color: #d9d9d9}')
@@ -178,7 +185,6 @@ class DownTo(QMainWindow):
             self.ui.table.setCellWidget(row, 2, self.progress_bar)
             self.ui.table.setCellWidget(row, 3, self.btn_delete)
             row += 1
-            last_row += 1
 
         if len(titles) < 20:
             self.ui.table.setRowCount(20)
@@ -187,7 +193,6 @@ class DownTo(QMainWindow):
             self.ui.table.setItem(row, 2, QTableWidgetItem(''))
             self.ui.table.setItem(row, 3, QTableWidgetItem(''))
             row += 1
-
 
     def CallThreadSearchVideos(self):
         if len(bank_urls) > 0:
@@ -200,7 +205,7 @@ class DownTo(QMainWindow):
             self.worker.search_video_error.connect(lambda: self.PopUps('Error - Search Video', "Unfortunately we couldn't find your video with the given link."))
 
             self.worker.update_table.connect(self.UpdateTable)
-
+            self.worker.search_video_completed.connect(self.CallThreadDownloadVideos)
             self.worker.search_video_completed.connect(self.thread.quit)
             self.worker.search_video_completed.connect(self.worker.deleteLater)
             self.thread.finished.connect(self.thread.deleteLater)
@@ -209,22 +214,25 @@ class DownTo(QMainWindow):
             self.thread.start()
 
     def CallThreadDownloadVideos(self):
-        # Thread Download Videos
+        # Thread Download
         self.thread = QThread()
         self.worker = FunctionsThreads()
+        self.worker.moveToThread(self.thread)
 
         self.thread.started.connect(self.worker.DownloadVideos)
 
+        self.worker.update_download_percent.connect(self.UpdateTable)
         # Finishing thread
         self.worker.download_finished.connect(self.thread.quit)
         self.worker.download_finished.connect(self.worker.deleteLater)
         self.thread.finished.connect(self.thread.deleteLater)
 
-        # Updating Progress Bar
-        self.worker.download_percent.connect()
-
         # Starting Thread
         self.thread.start()
+
+        # Enabling and disabling button download
+        self.ui.btn_download.setEnabled(False)
+        self.thread.finished.connect(lambda: self.ui.btn_download.setEnabled(True))
 
     def QueryUrls(self):
         global bank_urls
@@ -270,10 +278,11 @@ class DownTo(QMainWindow):
 
 
 class FunctionsThreads(QObject):
+
     # Signals To Emit
     download_finished = pyqtSignal()
-    download_percent = pyqtSignal()
-
+    download_percent = pyqtSignal(int)
+    update_download_percent = pyqtSignal()
     update_table = pyqtSignal()
 
     search_video_completed = pyqtSignal()
@@ -285,37 +294,44 @@ class FunctionsThreads(QObject):
         cursor.execute('SELECT * FROM downloads')
         bank_urls = cursor.fetchall()
 
-        for url in bank_urls:
-            if url[1] == 'MP3|MP4':
-                pytube.YouTube(url[0], on_progress_callback=self.progress_function).streams.get_highest_resolution().download()
-                yt = pytube.YouTube(url[0], on_progress_callback=self.progress_function).streams.get_audio_only()
-                old_file = yt.download()
-                base, ext = os.path.splitext(old_file)
-                new_file = base + '.mp3'
-                os.rename(old_file, new_file)
+        if len(bank_urls) > 0:
+            for url in bank_urls:
+                current_id = url[3]
 
-            elif url[1] == 'MP3':
-                yt = pytube.YouTube(url[0], on_progress_callback=self.progress_function).streams.get_audio_only()
-                old_file = yt.download()
-                base, ext = os.path.splitext(old_file)
-                new_file = base + '.mp3'
-                os.rename(old_file, new_file)
+                if url[1] == 'MP3|MP4':
+                    pytube.YouTube(url[0], on_progress_callback=DownTo.progress_function).streams.get_highest_resolution().download()
+                    yt = pytube.YouTube(url[0], on_progress_callback=self.progress_function).streams.get_audio_only()
+                    old_file = yt.download()
+                    base, ext = os.path.splitext(old_file)
+                    new_file = base + '.mp3'
+                    os.rename(old_file, new_file)
 
-            elif url[1] == 'MP4'
-                pytube.YouTube(url[0], on_progress_callback=self.progress_function).streams.get_highest_resolution().download()
+                elif url[1] == 'MP3':
+                    yt = pytube.YouTube(url[0], on_progress_callback=self.progress_function)
+                    v = yt.streams.get_audio_only()
+                    old_file = v.download()
+                    base, ext = os.path.splitext(old_file)
+                    new_file = base + '.mp3'
+                    os.rename(old_file, new_file)
 
+                elif url[1] == 'MP4':
+                    yt = pytube.YouTube(url[0], on_progress_callback=self.progress_function)
+                    video = yt.streams.get_highest_resolution()
+                    video.download()
 
+        self.download_finished.emit()
 
-
-
-    def progress_function(self, stream, chunk, file_handle, bytes_remaining):
+    def progress_function(self, stream ,chunk, bytes_remaining):
         global percent
         size = stream.filesize
-        p = 0
-        while p <= 100:
-            percent = p
-            self.download_percent.emit()
-            p = self.percent(bytes_remaining, size)
+        while percent < 200:
+            if percent > 90:
+                percent = 100
+                self.update_download_percent.emit()
+                break
+            else:
+                percent = self.percent(bytes_remaining, size)
+                self.update_download_percent.emit()
 
     def percent(self, tem, total):
         perc = (float(tem) / float(total)) * float(100)
@@ -331,7 +347,7 @@ class FunctionsThreads(QObject):
                     if url[2] != 1:
                         yt = pytube.YouTube(url[0])
                         title = yt.title
-                        titles.append([title, url[1]])
+                        titles.append([title, url[1], url[3]])
                         self.update_table.emit()
                     else:
                         delete_ids.append(url[3])
@@ -341,7 +357,7 @@ class FunctionsThreads(QObject):
                             ys = pytube.YouTube(url_playlist)
 
                             title = ys.title
-                            titles.append([title, url[1]])
+                            titles.append([title, url[1], url[3]])
 
                             cursor.execute('SELECT MAX(ID) FROM downloads')
                             last_id = cursor.fetchone()
