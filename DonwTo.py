@@ -19,7 +19,8 @@ link = ''
 directory = ''
 percent = 0
 current_id = 0
-last_row = 0
+last_progress = 0
+previousprogress = 0
 
 titles = list()
 delete_ids = list()
@@ -167,6 +168,8 @@ class DownTo(QMainWindow):
             if title[2] == current_id:
                 print(percent)
                 self.progress_bar.setValue(int(percent))
+            elif title[2] < current_id:
+                self.progress_bar.setValue(100)
 
             self.progress_bar.setFixedWidth(250)
 
@@ -206,6 +209,7 @@ class DownTo(QMainWindow):
 
             self.worker.update_table.connect(self.UpdateTable)
             self.worker.search_video_completed.connect(self.CallThreadDownloadVideos)
+
             self.worker.search_video_completed.connect(self.thread.quit)
             self.worker.search_video_completed.connect(self.worker.deleteLater)
             self.thread.finished.connect(self.thread.deleteLater)
@@ -223,6 +227,7 @@ class DownTo(QMainWindow):
 
         self.worker.update_download_percent.connect(self.UpdateTable)
         # Finishing thread
+
         self.worker.download_finished.connect(self.thread.quit)
         self.worker.download_finished.connect(self.worker.deleteLater)
         self.thread.finished.connect(self.thread.deleteLater)
@@ -299,9 +304,13 @@ class FunctionsThreads(QObject):
                 current_id = url[3]
 
                 if url[1] == 'MP3|MP4':
-                    pytube.YouTube(url[0], on_progress_callback=DownTo.progress_function).streams.get_highest_resolution().download()
-                    yt = pytube.YouTube(url[0], on_progress_callback=self.progress_function).streams.get_audio_only()
-                    old_file = yt.download()
+                    yt = pytube.YouTube(url[0], on_progress_callback=self.progress_function)
+                    video = yt.streams.get_highest_resolution()
+                    video.download()
+
+                    yt = pytube.YouTube(url[0], on_progress_callback=self.progress_function)
+                    v = yt.streams.get_audio_only()
+                    old_file = v.download()
                     base, ext = os.path.splitext(old_file)
                     new_file = base + '.mp3'
                     os.rename(old_file, new_file)
@@ -315,23 +324,26 @@ class FunctionsThreads(QObject):
                     os.rename(old_file, new_file)
 
                 elif url[1] == 'MP4':
-                    yt = pytube.YouTube(url[0], on_progress_callback=self.progress_function)
+                    yt = pytube.YouTube(url[0])
+                    yt.register_on_progress_callback(self.progress_function)
                     video = yt.streams.get_highest_resolution()
                     video.download()
 
         self.download_finished.emit()
 
     def progress_function(self, stream ,chunk, bytes_remaining):
-        global percent
-        size = stream.filesize
-        while percent < 200:
-            if percent > 90:
-                percent = 100
-                self.update_download_percent.emit()
-                break
-            else:
-                percent = self.percent(bytes_remaining, size)
-                self.update_download_percent.emit()
+        global previousprogress, percent
+        total_size = stream.filesize
+        bytes_downloaded = total_size - bytes_remaining
+
+
+
+        liveprogress = (int)(bytes_downloaded / total_size * 100)
+        if liveprogress > previousprogress:
+            previousprogress = liveprogress
+            percent = liveprogress
+            print(liveprogress)
+            self.update_download_percent.emit()
 
     def percent(self, tem, total):
         perc = (float(tem) / float(total)) * float(100)
