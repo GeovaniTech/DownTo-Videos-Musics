@@ -15,23 +15,22 @@ from tkinter import Tk
 # Interface Import
 from View.PY.interface import Ui_MainWindow
 
-link = ''
-directory = ''
-percent = 0
-current_id = 0
-last_progress = 0
-previousprogress = 0
-
-titles = list()
-delete_ids = list()
-
 bank = sqlite3.connect('bank_DownTo', check_same_thread=False)
 cursor = bank.cursor()
 
 cursor.execute('DELETE FROM downloads')
 bank.commit()
 
+titles = list()
+delete_ids = list()
 bank_urls = list()
+
+link = ''
+directory = ''
+
+percent = 0
+current_id = 0
+previousprogress = 0
 
 
 class DownTo(QMainWindow):
@@ -170,6 +169,8 @@ class DownTo(QMainWindow):
                 self.progress_bar.setValue(int(percent))
             elif title[2] < current_id:
                 self.progress_bar.setValue(100)
+            elif title[2] > current_id:
+                self.progress_bar.setValue(0)
 
             self.progress_bar.setFixedWidth(250)
 
@@ -328,7 +329,6 @@ class FunctionsThreads(QObject):
                     yt.register_on_progress_callback(self.progress_function)
                     video = yt.streams.get_highest_resolution()
                     video.download()
-
         self.download_finished.emit()
 
     def progress_function(self, stream ,chunk, bytes_remaining):
@@ -336,18 +336,11 @@ class FunctionsThreads(QObject):
         total_size = stream.filesize
         bytes_downloaded = total_size - bytes_remaining
 
-
-
         liveprogress = (int)(bytes_downloaded / total_size * 100)
         if liveprogress > previousprogress:
             previousprogress = liveprogress
             percent = liveprogress
-            print(liveprogress)
             self.update_download_percent.emit()
-
-    def percent(self, tem, total):
-        perc = (float(tem) / float(total)) * float(100)
-        return perc
 
     def SearchVideos(self):
         global title, delete_ids
