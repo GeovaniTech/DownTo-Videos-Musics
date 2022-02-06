@@ -19,15 +19,11 @@ from View.PY.interface import Ui_MainWindow
 bank = sqlite3.connect('bank_DownTo', check_same_thread=False)
 cursor = bank.cursor()
 
-cursor.execute('DELETE FROM downloads')
-bank.commit()
-
 delete_ids = list()
 bank_urls = list()
 
 link = ''
 directory = ''
-
 current_id = 0
 previousprogress = 0
 
@@ -147,6 +143,9 @@ class DownTo(QMainWindow):
             for url in bank_urls:
                 self.progress_bar = QProgressBar()
                 self.progress_bar.setValue(0)
+
+                if current_id == url[3]:
+                    self.progress_bar.setValue(previousprogress)
                 self.progress_bar.setFixedWidth(250)
 
                 self.btn_delete = QPushButton()
@@ -280,7 +279,7 @@ class FunctionsThreads(QObject):
             bank.commit()
 
             self.update_table.emit()
-            #self.search_video_completed.emit()
+            self.search_video_completed.emit()
 
     def TypesOfDownload(self):
         global current_id
@@ -302,12 +301,28 @@ class FunctionsThreads(QObject):
                     self.DownloadVideo(url[0], url[4], False)
 
     def DownloadVideo(self, url, tittle, MP3):
+        global directory
         yt = pytube.YouTube(url)
         yt.register_on_progress_callback(self.progress_function)
         video = yt.streams.get_highest_resolution()
         video.download()
 
-        shutil.move(f'{tittle}.mp3', directory)
+        files = list()
+        files.clear()
+
+        current_directory = os.path.dirname(os.path.realpath(__file__))
+
+        for (dirpath, dirnames, filenames) in os.walk(current_directory):
+            files.extend(filenames)
+            break
+
+        for file in files:
+            if file[-4:] == '.mp4':
+                try:
+                    shutil.move(f'{file}', directory)
+                except:
+                    DownTo().PopUps('File already existing on destination')
+                    os.remove(file)
 
         if MP3 == False:
             self.download_finished.emit()
@@ -326,7 +341,7 @@ class FunctionsThreads(QObject):
         self.download_finished.emit()
 
     def progress_function(self, stream ,chunk, bytes_remaining):
-        global previousprogress, percent
+        global previousprogress
         total_size = stream.filesize
         bytes_downloaded = total_size - bytes_remaining
 
