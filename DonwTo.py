@@ -28,6 +28,8 @@ current_id = 0
 previousprogress = 0
 
 
+
+
 class DownTo(QMainWindow):
     def __init__(self):
 
@@ -148,6 +150,9 @@ class DownTo(QMainWindow):
                     self.progress_bar.setValue(previousprogress)
                 self.progress_bar.setFixedWidth(250)
 
+                if url[5] == 'Yes':
+                    self.progress_bar.setValue(100)
+
                 self.btn_delete = QPushButton()
                 self.btn_delete.setFixedWidth(60)
                 self.btn_delete.clicked.connect(self.DeleteUrl)
@@ -175,6 +180,9 @@ class DownTo(QMainWindow):
 
         self.thread.started.connect(lambda: self.worker.SearchVideos(url, type, playlist))
         self.worker.search_video_error.connect(lambda: self.PopUps('Error - Search Video', "Unfortunately we couldn't find your video with the given link."))
+        self.worker.search_video_error.connect(self.thread.quit)
+        self.worker.search_video_error.connect(self.worker.deleteLater)
+        self.thread.finished.connect(self.thread.deleteLater)
 
         self.worker.update_table.connect(self.QueryUrls)
         self.worker.update_table.connect(self.UpdateTable)
@@ -288,20 +296,21 @@ class FunctionsThreads(QObject):
 
         if len(bank_urls) > 0:
             for url in bank_urls:
-                current_id = url[3]
+                if url[5] != 'Yes':
+                    if url[1] == 'MP4|MP3':
+                        self.DownloadVideo(url[0], url[3], True)
+                        self.DownloadMusic(url[0], url[3])
 
-                if url[1] == 'MP4|MP3':
-                    self.DownloadVideo(url[0], url[4], True)
-                    self.DownloadMusic(url[0], url[4])
+                    elif url[1] == 'MP3':
+                        self.DownloadMusic(url[0], url[3])
 
-                elif url[1] == 'MP3':
-                    self.DownloadMusic(url[0])
+                    elif url[1] == 'MP4':
+                        self.DownloadVideo(url[0], url[3], False)
 
-                elif url[1] == 'MP4':
-                    self.DownloadVideo(url[0], url[4], False)
+    def DownloadVideo(self, url, id, MP3):
+        global current_id
+        current_id = id - 1
 
-    def DownloadVideo(self, url, tittle, MP3):
-        global directory
         yt = pytube.YouTube(url)
         yt.register_on_progress_callback(self.progress_function)
         video = yt.streams.get_highest_resolution()
@@ -321,13 +330,17 @@ class FunctionsThreads(QObject):
                 try:
                     shutil.move(f'{file}', directory)
                 except:
-                    DownTo().PopUps('File already existing on destination')
                     os.remove(file)
-
+                else:
+                    cursor.execute(f'UPDATE downloads set completed = "Yes" WHERE id = {id}')
+                    bank.commit()
         if MP3 == False:
             self.download_finished.emit()
 
-    def DownloadMusic(self, url, tittle):
+    def DownloadMusic(self, url, id):
+        global current_id
+        current_id = id
+
         yt = pytube.YouTube(url)
         yt.register_on_progress_callback(self.progress_function)
 
@@ -337,7 +350,24 @@ class FunctionsThreads(QObject):
         new_file = base + '.mp3'
         os.rename(old_file, new_file)
 
-        shutil.move(f'{tittle}.mp3', directory)
+        files = list()
+        files.clear()
+
+        current_directory = os.path.dirname(os.path.realpath(__file__))
+
+        for (dirpath, dirnames, filenames) in os.walk(current_directory):
+            files.extend(filenames)
+            break
+
+        for file in files:
+            if file[-4:] == '.mp3':
+                try:
+                    shutil.move(f'{file}', directory)
+                except:
+                    os.remove(file)
+                else:
+                    cursor.execute(f'UPDATE downloads set completed = "Yes" WHERE id = {id}')
+                    bank.commit()
         self.download_finished.emit()
 
     def progress_function(self, stream ,chunk, bytes_remaining):
