@@ -28,8 +28,6 @@ current_id = 0
 previousprogress = 0
 
 
-
-
 class DownTo(QMainWindow):
     def __init__(self):
 
@@ -133,6 +131,9 @@ class DownTo(QMainWindow):
             self.PopUps('Error Link', 'Please, enter a valid link.')
 
     def UpdateTable(self):
+        global current_id
+        self.QueryUrls()
+
         row = 0
         self.ui.table.setRowCount(len(bank_urls))
 
@@ -146,12 +147,12 @@ class DownTo(QMainWindow):
                 self.progress_bar = QProgressBar()
                 self.progress_bar.setValue(0)
 
-                if current_id == url[3]:
-                    self.progress_bar.setValue(previousprogress)
-                self.progress_bar.setFixedWidth(250)
-
                 if url[5] == 'Yes':
                     self.progress_bar.setValue(100)
+
+                elif current_id == url[3]:
+                    self.progress_bar.setValue(previousprogress)
+                self.progress_bar.setFixedWidth(250)
 
                 self.btn_delete = QPushButton()
                 self.btn_delete.setFixedWidth(60)
@@ -182,12 +183,11 @@ class DownTo(QMainWindow):
         self.worker.search_video_error.connect(lambda: self.PopUps('Error - Search Video', "Unfortunately we couldn't find your video with the given link."))
         self.worker.search_video_error.connect(self.thread.quit)
         self.worker.search_video_error.connect(self.worker.deleteLater)
-        self.thread.finished.connect(self.thread.deleteLater)
 
         self.worker.update_table.connect(self.QueryUrls)
         self.worker.update_table.connect(self.UpdateTable)
-        self.worker.search_video_completed.connect(self.CallThreadDownloadVideos)
 
+        self.worker.search_video_completed.connect(self.CallThreadDownloadVideos)
         self.worker.search_video_completed.connect(self.thread.quit)
         self.worker.search_video_completed.connect(self.worker.deleteLater)
         self.thread.finished.connect(self.thread.deleteLater)
@@ -204,10 +204,12 @@ class DownTo(QMainWindow):
 
         self.thread.started.connect(self.worker.TypesOfDownload)
 
-        self.worker.update_table.connect(self.UpdateTable)
+        self.worker.update_table_download.connect(self.UpdateTable)
 
         self.worker.download_finished.connect(self.thread.quit)
         self.worker.download_finished.connect(self.worker.deleteLater)
+        self.worker.download_finished.connect(self.UpdateTable)
+
         self.thread.finished.connect(self.thread.deleteLater)
 
         self.thread.start()
@@ -263,6 +265,7 @@ class FunctionsThreads(QObject):
     # Signals To Emit
     download_finished = pyqtSignal()
     update_table = pyqtSignal()
+    update_table_download = pyqtSignal()
 
     search_video_completed = pyqtSignal()
     search_video_error = pyqtSignal()
@@ -308,9 +311,6 @@ class FunctionsThreads(QObject):
                         self.DownloadVideo(url[0], url[3], False)
 
     def DownloadVideo(self, url, id, MP3):
-        global current_id
-        current_id = id - 1
-
         yt = pytube.YouTube(url)
         yt.register_on_progress_callback(self.progress_function)
         video = yt.streams.get_highest_resolution()
@@ -334,13 +334,11 @@ class FunctionsThreads(QObject):
                 else:
                     cursor.execute(f'UPDATE downloads set completed = "Yes" WHERE id = {id}')
                     bank.commit()
+
         if MP3 == False:
             self.download_finished.emit()
 
     def DownloadMusic(self, url, id):
-        global current_id
-        current_id = id
-
         yt = pytube.YouTube(url)
         yt.register_on_progress_callback(self.progress_function)
 
@@ -368,17 +366,19 @@ class FunctionsThreads(QObject):
                 else:
                     cursor.execute(f'UPDATE downloads set completed = "Yes" WHERE id = {id}')
                     bank.commit()
+
         self.download_finished.emit()
 
     def progress_function(self, stream ,chunk, bytes_remaining):
-        global previousprogress
+        global previousprogress, current_id
         total_size = stream.filesize
         bytes_downloaded = total_size - bytes_remaining
 
         liveprogress = (int)(bytes_downloaded / total_size * 100)
         if liveprogress > previousprogress:
             previousprogress = liveprogress
-            self.update_table.emit()
+            print(f'ID Progress {current_id}')
+            self.update_table_download.emit()
 
 
 if __name__ == '__main__':
