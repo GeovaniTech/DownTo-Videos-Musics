@@ -180,6 +180,7 @@ class DownTo(QMainWindow):
         self.worker.moveToThread(self.thread)
 
         self.thread.started.connect(lambda: self.worker.SearchVideos(url, type, playlist))
+        self.worker.search_video_error.connect(lambda: self.ui.btn_download.setEnabled(True))
         self.worker.search_video_error.connect(lambda: self.PopUps('Error - Search Video', "Unfortunately we couldn't find your video with the given link."))
         self.worker.search_video_error.connect(self.thread.quit)
         self.worker.search_video_error.connect(self.worker.deleteLater)
@@ -194,8 +195,8 @@ class DownTo(QMainWindow):
 
         self.thread.start()
 
+        # Enabling and disabling button download
         self.ui.btn_download.setEnabled(False)
-        self.thread.finished.connect(lambda: self.ui.btn_download.setEnabled(True))
 
     def CallThreadDownloadVideos(self):
         self.thread = QThread()
@@ -269,28 +270,61 @@ class FunctionsThreads(QObject):
 
     search_video_completed = pyqtSignal()
     search_video_error = pyqtSignal()
+    search_video_error_playlist = pyqtSignal()
 
     def SearchVideos(self, url, type, playlist):
-        try:
-            yt = pytube.YouTube(url)
-            tittle = yt.title
-        except:
-            self.search_video_error.emit()
-        else:
-            cursor.execute('SELECT MAX(ID) FROM downloads')
-            last_id = cursor.fetchone()
 
-            for id_bank in last_id:
-                if id_bank == None:
-                    id = 1
-                else:
-                    id = int(id_bank) + 1
+        # SearchVideos - Playlist
+        if playlist == True:
+            try:
+                yt = pytube.Playlist(url)
+                for links in yt.video_urls:
+                    try:
+                        yt = pytube.YouTube(links)
+                        tittle = yt.title
 
-            cursor.execute(f'INSERT INTO downloads (url, type, playlist, ID, tittle) VALUES ("{url}", "{type}", {playlist}, {id}, "{tittle}")')
-            bank.commit()
+                        playlist = False
+                    except:
+                        self.search_video_error_playlist.emit()
+                    else:
+                        cursor.execute('SELECT MAX(ID) FROM downloads')
+                        last_id = cursor.fetchone()
 
-            self.update_table.emit()
-            self.search_video_completed.emit()
+                        for id_bank in last_id:
+                            if id_bank == None:
+                                id = 1
+                            else:
+                                id = int(id_bank) + 1
+
+                        cursor.execute(
+                            f'INSERT INTO downloads (url, type, playlist, ID, tittle) VALUES ("{links}", "{type}", {playlist}, {id}, "{tittle}")')
+                        bank.commit()
+                        self.update_table.emit()
+                        self.search_video_completed.emit()
+            except:
+                self.search_video_error.emit()
+
+        elif playlist == False:
+            try:
+                yt = pytube.YouTube(url)
+                tittle = yt.title
+            except:
+                self.search_video_error.emit()
+            else:
+                cursor.execute('SELECT MAX(ID) FROM downloads')
+                last_id = cursor.fetchone()
+
+                for id_bank in last_id:
+                    if id_bank == None:
+                        id = 1
+                    else:
+                        id = int(id_bank) + 1
+
+                cursor.execute(
+                    f'INSERT INTO downloads (url, type, playlist, ID, tittle) VALUES ("{url}", "{type}", {playlist}, {id}, "{tittle}")')
+                bank.commit()
+                self.update_table.emit()
+                self.search_video_completed.emit()
 
     def TypesOfDownload(self):
         global current_id
