@@ -131,7 +131,7 @@ class DownTo(QMainWindow):
             self.PopUps('Error Link', 'Please, enter a valid link.')
 
     def UpdateTable(self):
-        global current_id
+        global previousprogress, current_id
         self.QueryUrls()
 
         row = 0
@@ -150,7 +150,7 @@ class DownTo(QMainWindow):
                 if url[5] == 'Yes':
                     self.progress_bar.setValue(100)
 
-                elif current_id == url[3]:
+                if current_id == url[3]:
                     self.progress_bar.setValue(previousprogress)
                 self.progress_bar.setFixedWidth(250)
 
@@ -327,8 +327,6 @@ class FunctionsThreads(QObject):
                 self.search_video_completed.emit()
 
     def TypesOfDownload(self):
-        global current_id
-
         DownTo().QueryUrls()
 
         if len(bank_urls) > 0:
@@ -345,6 +343,9 @@ class FunctionsThreads(QObject):
                         self.DownloadVideo(url[0], url[3], False)
 
     def DownloadVideo(self, url, id, MP3):
+        global current_id
+        current_id = id
+
         yt = pytube.YouTube(url)
         yt.register_on_progress_callback(self.progress_function)
         video = yt.streams.get_highest_resolution()
@@ -373,6 +374,9 @@ class FunctionsThreads(QObject):
             self.download_finished.emit()
 
     def DownloadMusic(self, url, id):
+        global current_id
+        current_id = id
+
         yt = pytube.YouTube(url)
         yt.register_on_progress_callback(self.progress_function)
 
@@ -404,14 +408,13 @@ class FunctionsThreads(QObject):
         self.download_finished.emit()
 
     def progress_function(self, stream ,chunk, bytes_remaining):
-        global previousprogress, current_id
+        global previousprogress
         total_size = stream.filesize
         bytes_downloaded = total_size - bytes_remaining
 
         liveprogress = (int)(bytes_downloaded / total_size * 100)
         if liveprogress > previousprogress:
             previousprogress = liveprogress
-            print(f'ID Progress {current_id}')
             self.update_table_download.emit()
 
 
