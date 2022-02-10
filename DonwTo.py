@@ -21,6 +21,7 @@ cursor = bank.cursor()
 
 delete_ids = list()
 bank_urls = list()
+bank_urls_not_downlaoded = list()
 
 link = ''
 directory = ''
@@ -41,6 +42,7 @@ class DownTo(QMainWindow):
 
         self.ConfigTable()
         self.QueryUrls()
+        self.QueryUrlsNotDownlaoded()
         self.UpdateTable()
 
         self.ui.btn_exit.clicked.connect(self.Close)
@@ -224,6 +226,16 @@ class DownTo(QMainWindow):
         cursor.execute('SELECT * FROM downloads ORDER BY ID ASC')
         bank_urls = cursor.fetchall()
 
+    def QueryUrlsNotDownlaoded(self):
+        global bank_urls_not_downlaoded
+
+        cursor.execute('SELECT * FROM downloads WHERE completed = "No"')
+        bank_urls_not_downlaoded = cursor.fetchall()
+        print(bank_urls_not_downlaoded)
+
+        if len(bank_urls_not_downlaoded) > 0:
+            self.CallThreadDownloadVideos()
+
     def PopUps(self, title, description):
         message = QMessageBox()
         message.setWindowTitle(str(title))
@@ -261,6 +273,19 @@ class DownTo(QMainWindow):
         self.QueryUrls()
         self.UpdateTable()
 
+        files = list()
+        files.clear()
+
+        current_directory = os.path.dirname(os.path.realpath(__file__))
+
+        for (dirpath, dirnames, filenames) in os.walk(current_directory):
+            files.extend(filenames)
+            break
+
+        for file in files:
+            if file[-4:] == '.mp3' or file[-4:] == '.mp4':
+                ...
+
 
 class FunctionsThreads(QObject):
     # Signals To Emit
@@ -297,7 +322,7 @@ class FunctionsThreads(QObject):
                                 id = int(id_bank) + 1
 
                         cursor.execute(
-                            f'INSERT INTO downloads (url, type, playlist, ID, tittle) VALUES ("{links}", "{type}", {playlist}, {id}, "{tittle}")')
+                            f'INSERT INTO downloads (url, type, playlist, ID, tittle, completed) VALUES ("{links}", "{type}", {playlist}, {id}, "{tittle}", "No")')
                         bank.commit()
                         self.update_table.emit()
                         self.search_video_completed.emit()
@@ -321,7 +346,7 @@ class FunctionsThreads(QObject):
                         id = int(id_bank) + 1
 
                 cursor.execute(
-                    f'INSERT INTO downloads (url, type, playlist, ID, tittle) VALUES ("{url}", "{type}", {playlist}, {id}, "{tittle}")')
+                    f'INSERT INTO downloads (url, type, playlist, ID, tittle, completed) VALUES ("{url}", "{type}", {playlist}, {id}, "{tittle}", "No")')
                 bank.commit()
                 self.update_table.emit()
                 self.search_video_completed.emit()
@@ -341,6 +366,8 @@ class FunctionsThreads(QObject):
 
                     elif url[1] == 'MP4':
                         self.DownloadVideo(url[0], url[3], False)
+        else:
+            self.download_finished.emit()
 
     def DownloadVideo(self, url, id, MP3):
         global current_id
