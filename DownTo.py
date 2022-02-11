@@ -1,7 +1,6 @@
 import shutil
 import sys
 import os
-import requests
 import pytube
 import sqlite3
 import webbrowser
@@ -231,7 +230,6 @@ class DownTo(QMainWindow):
 
         cursor.execute('SELECT * FROM downloads WHERE completed = "No"')
         bank_urls_not_downlaoded = cursor.fetchall()
-        print(bank_urls_not_downlaoded)
 
         if len(bank_urls_not_downlaoded) > 0:
             self.CallThreadDownloadVideos()
