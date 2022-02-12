@@ -1,6 +1,6 @@
 # DownTo
 
-> Status: Development⚠️
+> Status: Finished/Testing✔️
 
 ### Software intended to download Playlists, Videos and Music.
 
@@ -12,6 +12,5 @@
 + ### Tkinter
 
 ## Application Images
-![1](https://user-images.githubusercontent.com/84943777/152220586-fd558edd-4023-4d64-ace2-a88ec28bf1c2.PNG)
-![2](https://user-images.githubusercontent.com/84943777/152220591-f7d5fc44-2f32-4e65-b46e-7fffaed682da.PNG)
-![Capture](https://user-images.githubusercontent.com/84943777/152570280-de7cbe15-6d45-4e5f-9d7b-5e45110ba4a4.PNG)
+![2](https://user-images.githubusercontent.com/84943777/153694339-35b46c23-e4d5-45c5-a63c-c3fb43591494.PNG)
+![1](https://user-images.githubusercontent.com/84943777/153694342-4e7dc6fd-ec81-4ae3-9679-e308bb42edc8.PNG)
