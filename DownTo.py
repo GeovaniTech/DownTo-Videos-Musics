@@ -23,7 +23,7 @@ bank_urls = list()
 bank_urls_not_downlaoded = list()
 
 link = ''
-directory = ''
+directory_select = ''
 current_id = 0
 previousprogress = 0
 
@@ -41,8 +41,8 @@ class DownTo(QMainWindow):
 
         self.ConfigTable()
         self.QueryUrls()
-        self.QueryUrlsNotDownlaoded()
         self.UpdateTable()
+        self.QueryUrlsNotDownlaoded()
 
         self.ui.btn_exit.clicked.connect(self.Close)
         self.ui.btn_max_min.clicked.connect(self.Max_Min)
@@ -99,7 +99,7 @@ class DownTo(QMainWindow):
         self.ui.frame_conteiner_Table.layout().setContentsMargins(0, 0, 0, 0)
 
     def ValidationsDownload(self):
-        global link, directory
+        global link, directory_select
         link = self.ui.line_link.text()
 
         check_playlist = self.ui.check_playlist
@@ -107,7 +107,7 @@ class DownTo(QMainWindow):
         check_video = self.ui.check_video
 
         if link != '':
-            if directory != '':
+            if directory_select != '':
                 if check_video.isChecked() == True or check_music.isChecked() == True:
                     if check_playlist.isChecked() == True:
                         self.playlist = True
@@ -123,7 +123,7 @@ class DownTo(QMainWindow):
                     if check_video.isChecked() == True and check_music.isChecked() == True:
                         self.type = 'MP4|MP3'
 
-                    self.CallThreadSearchVideos(link, self.type, self.playlist)
+                    self.CallThreadSearchVideos(link, self.type, self.playlist, directory_select)
                 else:
                     self.PopUps('Download type error', 'Please, select type of download, music or video.')
             else:
@@ -175,12 +175,43 @@ class DownTo(QMainWindow):
             self.ui.table.setItem(row, 0, QTableWidgetItem(''))
             row += 1
 
-    def CallThreadSearchVideos(self, url, type, playlist):
+    def DeleteUrl(self):
+        global bank_urls
+        id = self.ui.table.currentIndex().row() + 1
+
+        cursor.execute(f'DELETE FROM downloads WHERE id = {id}')
+        bank.commit()
+
+        cursor.execute(f'SELECT * FROM downloads WHERE id > {id}')
+        id_to_be_changed = cursor.fetchall()
+
+        for url in id_to_be_changed:
+            if int(url[3]) > id:
+                cursor.execute(f'UPDATE downloads set id = {url[3] - 1} WHERE url = "{url[0]}" and type = "{url[1]}"')
+                bank.commit()
+
+        self.QueryUrls()
+        self.UpdateTable()
+
+        files = list()
+        files.clear()
+
+        current_directory = os.path.dirname(os.path.realpath(__file__))
+
+        for (dirpath, dirnames, filenames) in os.walk(current_directory):
+            files.extend(filenames)
+            break
+
+        for file in files:
+            if file[-4:] == '.mp3' or file[-4:] == '.mp4':
+                ...
+
+    def CallThreadSearchVideos(self, url, type, playlist, directory):
         self.thread = QThread()
         self.worker = FunctionsThreads()
         self.worker.moveToThread(self.thread)
 
-        self.thread.started.connect(lambda: self.worker.SearchVideos(url, type, playlist))
+        self.thread.started.connect(lambda: self.worker.SearchVideos(url, type, playlist, directory))
         self.worker.search_video_error.connect(lambda: self.ui.btn_download.setEnabled(True))
         self.worker.search_video_error.connect(lambda: self.PopUps('Error - Search Video', "Unfortunately we couldn't find your video with the given link."))
         self.worker.search_video_error.connect(self.thread.quit)
@@ -189,15 +220,17 @@ class DownTo(QMainWindow):
         self.worker.update_table.connect(self.QueryUrls)
         self.worker.update_table.connect(self.UpdateTable)
 
-        self.worker.search_video_completed.connect(self.CallThreadDownloadVideos)
         self.worker.search_video_completed.connect(self.thread.quit)
         self.worker.search_video_completed.connect(self.worker.deleteLater)
+
         self.thread.finished.connect(self.thread.deleteLater)
 
         self.thread.start()
 
         # Enabling and disabling button download
         self.ui.btn_download.setEnabled(False)
+        self.thread.finished.connect(lambda: self.ui.btn_download.setEnabled(True))
+        self.thread.finished.connect(self.CallThreadDownloadVideos)
 
     def CallThreadDownloadVideos(self):
         self.thread = QThread()
@@ -210,6 +243,7 @@ class DownTo(QMainWindow):
 
         self.worker.download_finished.connect(self.thread.quit)
         self.worker.download_finished.connect(self.worker.deleteLater)
+        self.worker.download_finished.connect(self.QueryUrls)
         self.worker.download_finished.connect(self.UpdateTable)
 
         self.thread.finished.connect(self.thread.deleteLater)
@@ -245,59 +279,26 @@ class DownTo(QMainWindow):
         x = message.exec_()
 
     def Directory(self):
-        global directory
+        global directory_select
 
         root = Tk()
         root.withdraw()
         root.iconbitmap('View/QRC/Logo.ico')
 
-        directory = askdirectory()
-
-    def DeleteUrl(self):
-        global bank_urls
-        id = self.ui.table.currentIndex().row() + 1
-
-        cursor.execute(f'DELETE FROM downloads WHERE id = {id}')
-        bank.commit()
-
-        cursor.execute(f'SELECT * FROM downloads WHERE id > {id}')
-        id_to_be_changed = cursor.fetchall()
-
-        for url in id_to_be_changed:
-            if int(url[3]) > id:
-                cursor.execute(f'UPDATE downloads set id = {url[3] - 1} WHERE url = "{url[0]}" and type = "{url[1]}"')
-                bank.commit()
-
-        self.QueryUrls()
-        self.UpdateTable()
-
-        files = list()
-        files.clear()
-
-        current_directory = os.path.dirname(os.path.realpath(__file__))
-
-        for (dirpath, dirnames, filenames) in os.walk(current_directory):
-            files.extend(filenames)
-            break
-
-        for file in files:
-            if file[-4:] == '.mp3' or file[-4:] == '.mp4':
-                ...
+        directory_select = askdirectory()
 
 
 class FunctionsThreads(QObject):
     # Signals To Emit
-    download_finished = pyqtSignal()
     update_table = pyqtSignal()
     update_table_download = pyqtSignal()
 
+    download_finished = pyqtSignal()
     search_video_completed = pyqtSignal()
     search_video_error = pyqtSignal()
     search_video_error_playlist = pyqtSignal()
 
-    def SearchVideos(self, url, type, playlist):
-
-        # SearchVideos - Playlist
+    def SearchVideos(self, url, type, playlist, directory):
         if playlist == True:
             try:
                 yt = pytube.Playlist(url)
@@ -318,10 +319,10 @@ class FunctionsThreads(QObject):
                                 id = 1
                             else:
                                 id = int(id_bank) + 1
-
-                        cursor.execute(
-                            f'INSERT INTO downloads (url, type, playlist, ID, tittle, completed) VALUES ("{links}", "{type}", {playlist}, {id}, "{tittle}", "No")')
+                        print(directory)
+                        cursor.execute(f'INSERT INTO downloads (url, type, playlist, ID, tittle, completed, directory) VALUES ("{links}", "{type}", {playlist}, {id}, "{tittle}", "No", "{directory}")')
                         bank.commit()
+
                         self.update_table.emit()
                         self.search_video_completed.emit()
             except:
@@ -344,30 +345,29 @@ class FunctionsThreads(QObject):
                         id = int(id_bank) + 1
 
                 cursor.execute(
-                    f'INSERT INTO downloads (url, type, playlist, ID, tittle, completed) VALUES ("{url}", "{type}", {playlist}, {id}, "{tittle}", "No")')
+                    f'INSERT INTO downloads (url, type, playlist, ID, tittle, completed, directory) VALUES ("{url}", "{type}", {playlist}, {id}, "{tittle}", "No", "{directory}")')
                 bank.commit()
+
                 self.update_table.emit()
                 self.search_video_completed.emit()
 
     def TypesOfDownload(self):
-        DownTo().QueryUrls()
-
         if len(bank_urls) > 0:
             for url in bank_urls:
                 if url[5] != 'Yes':
                     if url[1] == 'MP4|MP3':
-                        self.DownloadVideo(url[0], url[3], True)
+                        self.DownloadVideo(url[0], url[3], True, url[6])
                         self.DownloadMusic(url[0], url[3])
 
                     elif url[1] == 'MP3':
-                        self.DownloadMusic(url[0], url[3])
+                        self.DownloadMusic(url[0], url[3], url[6])
 
                     elif url[1] == 'MP4':
-                        self.DownloadVideo(url[0], url[3], False)
+                        self.DownloadVideo(url[0], url[3], False, url[6])
         else:
             self.download_finished.emit()
 
-    def DownloadVideo(self, url, id, MP3):
+    def DownloadVideo(self, url, id, MP3, directory):
         global current_id
         current_id = id
 
@@ -398,7 +398,7 @@ class FunctionsThreads(QObject):
         if MP3 == False:
             self.download_finished.emit()
 
-    def DownloadMusic(self, url, id):
+    def DownloadMusic(self, url, id, directory):
         global current_id
         current_id = id
 
